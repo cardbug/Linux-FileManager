@@ -70,6 +70,11 @@ class Ui_TabWidget(object):
         self.quit = QtWidgets.QPushButton(self.tab)
         self.quit.setGeometry(QtCore.QRect(600, 510, 75, 23))
         self.quit.setObjectName("quit")
+        #重命名rename
+        self.rename = QtWidgets.QPushButton(self.tab)
+        self.rename.setGeometry(QtCore.QRect(550, 330, 121, 41))
+        self.rename.setObjectName("rename")
+
 
         #将标签页添加到 TabWidget 中
         TabWidget.addTab(self.tab,"")
@@ -83,6 +88,7 @@ class Ui_TabWidget(object):
         self.write.clicked.connect(dispose.write)
         self.move.clicked.connect(dispose.move)
         self.quit.clicked.connect(dispose.quit)
+        self.rename.clicked.connect(dispose.rename)
         self.listWidget.itemDoubleClicked.connect(dispose.open)
 
         #根据当前的语言设置重新加载并显示对应的翻译文本
@@ -106,6 +112,7 @@ class Ui_TabWidget(object):
         self.only_read.setText(_translate("TabWidget", "只读文件"))
         self.write.setText(_translate("TabWidget", "写入文件"))
         self.move.setText(_translate("TabWidget","移动文件"))
+        self.rename.setText(_translate("TabWidget","重命名"))
         self.quit.setText(_translate("TabWidget", "退出"))
         self.textbox.setText(_translate("TabWidget",""))
 
@@ -186,71 +193,91 @@ class dispose(QtWidgets.QTabWidget):
                     except UnicodeDecodeError:
                         QMessageBox.warning(None, "警告", "文件编码无法解析，尝试使用其他编码！", QMessageBox.Ok)
                     except FileNotFoundError:
-                        QMessageBox.warning(None, "警告", "文件未找到！", QMessageBox.Ok)
-                    except PermissionError:
-                        QMessageBox.warning(None, "警告", "没有权限访问文件！", QMessageBox.Ok)
-                    except Exception:
-                        QMessageBox.warning(None, "警告", "发生未知错误！", QMessageBox.Ok)
-        except Exception:
-            QMessageBox.warning(None, "警告", "发生未知错误！", QMessageBox.Ok)
+ 所有QMessageBox都是（&#38;A）。警告 (无 , Warning , &#34;File not found!&#34; ，QMessageBox。好的 )
+除了 许可错误：
+ 所有QMessageBox都是（&#38;A）。警告 (无 , Warning , &#34;No permission to access the file!&#34; ，QMessageBox。好的 )
+除了例外情况：
+ 所有QMessageBox都是（&#38;A）。警告 (无 , Warning , &#34;An unknown error has occurred!&#34; ，QMessageBox。好的 )
+除了例外情况：
+ 所有QMessageBox都是（&#38;A）。警告 (无 , Warning , &#34;An unknown error has occurred!&#34; ，QMessageBox。好的 )
 
-    def write(self):    #写文件（配合打开/只读文件可实现假修改方法）
-        file_name = ui.listWidget.currentItem().text()
-        location = str(dir) + '/' + str(file_name)
-        f = open(location, 'w')
-        data = ui.textbox.toPlainText()
-        f.write(data)
+ 定义写 (自己 ) : #Write file (false modification method can be realized with open/read-only file)
+file_name = ui. 列表小工具 .当前项目 ( ) .文本 ( )
+location =字符串 ( 目录 )+ &#39;/&#39;+字符串 (文件名 )
+f =打开 (位置，“w” )
+data = ui.文本框 . 到纯文本 ( )
+f、写 (数据 )
 
-    def move(self):  # 移动文件
-        try:
-            if ui.listWidget.currentItem() is None:
-                # 如果用户没有选择任何文件，弹出提示
-                QMessageBox.information(None, "提示", "请先选择要移动的文件。")
-                return
-            
-            file_name = ui.listWidget.currentItem().text()
-            source = str(dir) + '/' + str(file_name)
+ 定义移动 (自己 ) : #Move files
+尝试 :
+如果用户界面 列表小工具 .当前项目 ( )是无 :
+ #If the user does not select any file, a prompt will pop up
+ 所有QMessageBox都是（&#38;A）。信息 (无 , Prompt , Please select the file to move first )
+返回
 
-            # 弹出文件对话框让用户选择目标文件夹
-            destination = QFileDialog.getExistingDirectory(None, '选择目标文件夹', 'C:/')
+file_name = ui. 列表小工具 .当前项目 ( ) .文本 ( )
+source =字符串 ( 目录 )+ &#39;/&#39;+字符串 (文件名 )
 
-            if destination:  # 如果用户选择了目标文件夹
-                destination_path = os.path.join(destination, file_name)
+ #Pop up the file dialog box to let the user select the target folder
+destination = QFileDialog. 获取现有目录 (无 , &#39;Select destination folder&#39; ,“C:/” )
 
-                if os.path.exists(destination_path):
-                    # 如果目标文件已经存在，询问用户是否覆盖
-                    reply = QMessageBox.question(None, '文件已存在', '目标文件夹已经存在同名文件，是否覆盖？',
-                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        # 覆盖已存在的文件
-                        shutil.move(source, destination_path)
-                    else:
-                        # 用户选择不覆盖，不执行移动操作
-                        return
-                else:
-                    # 目标文件夹不存在同名文件，正常移动
-                    shutil.move(source, destination_path)
+如果目的地： #If the user selects a destination folder
+destination_path = os.路径 .参加 (目标，文件名 )
 
-                # 更新界面，从文件列表中移除已移动的文件
-                ui.listWidget.takeItem(ui.listWidget.currentRow())
-        except FileNotFoundError:
-            QMessageBox.critical(None, "错误", "找不到文件或目录。")
-        except PermissionError:
-            QMessageBox.critical(None, "错误", "没有权限执行操作。")
-        except Exception as e:
-            # 如果发生其他异常，弹出错误对话框显示错误信息
-            QMessageBox.critical(None, "Error", f"移动文件时发生错误：{str(e)}")
+如果操作系统路径 .存在 (目标路径 ) :
+ #If the target file already exists, ask the user whether to overwrite it
+reply = QMessageBox.问题 (无 , &#39;File already exists&#39; , &#39;A file with the same name already exists in the target folder. Do you want to overwrite it?&#39; ,
+ 所有QMessageBox都是（&#38;A）。是的 对不 ，QMessageBox。不 )
+如果reply == QMessageBox.是的 :
+ #Overwrite existing files
+舒蒂尔移动 (源，目标路径 )
+其他的 :
+ #The user chooses not to overwrite, and does not perform the move operation
+返回
+其他的 :
+ #The file with the same name does not exist in the target folder. It is moved normally
+舒蒂尔移动 (源，目标路径 )
 
-    def quit(self):     # 退出软件
-        # 退出时会有弹框提示用户是否确认退出
-        reply = QMessageBox.question(None, '确认退出', '确定要退出吗？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            sys.exit(app.exec_())
+ #Update the interface to remove the moved files from the file list
+用户界面 列表小工具 . takeItem（获取项目） (用户界面 列表小工具 . 当前行 ( ) )
+除了FileNotFounder错误：
+ 所有QMessageBox都是（&#38;A）。批评的 (无 , Error , The file or directory could not be found )
+除了 许可错误：
+ 所有QMessageBox都是（&#38;A）。批评的 (无 , Error , You do not have permission to perform the operation )
+除了例外作为电子邮箱：
+ #If other exceptions occur, an error dialog box will pop up to display error information
+ 所有QMessageBox都是（&#38;A）。批评的 (无 ,“错误” , F &#34;An error occurred while moving the file: {字符串 (e（电子） ) } &#34; )
+ #Rename
+ 定义重命名 (自己 ) :
+item = ui. 列表小工具 .当前项目 ( )
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    TabWidget = QtWidgets.QTabWidget()
-    ui = Ui_TabWidget()
-    ui.setupUi(TabWidget)
-    TabWidget.show()
-    sys.exit(app.exec_())
+如果项目是不无 :
+current_name = item.文本 ( )
+
+new_name, ok_pressed = QInputDialog.获取文本 (无 ,“重命名” ,“输入新名称：” ，QLine编辑正常，当前名称 )
+
+如果ok_已按下和new_name != current_name:
+old_path = os.路径 .参加 (目录，当前名称 )
+new_path = os.路径 .参加 ( 目录，新名称 )
+
+尝试 :
+操作系统重命名 (旧路径，新路径 )
+项目 设置文本 (新名称 )
+打印 ( F &#34;was successfully renamed to: {新名称 } &#34; )
+除了例外作为电子邮箱：
+打印 ( F &#34;Renaming failed: {e（电子） } &#34; )
+其他的 :
+ 所有QMessageBox都是（&#38;A）。警告 (无 , Warning , &#34;Please select the file to be renamed&#34; ，QMessageBox。好的 )
+ 定义退出 (自己 ) : #Exit the software
+ #When exiting, a pop-up box will prompt the user whether to confirm exiting
+reply = QMessageBox.问题 (无 , &#39;Confirm exit&#39; , &#39;Are you sure you want to exit?&#39; ，QMessageBox。是的 对不 ，QMessageBox。不 )
+如果reply == QMessageBox.是的 :
+系统出口 (应用程序执行官_ ( ) )
+
+如果__name__ ==“__main__” :
+app = QtWidgets. QA应用 (系统 自动变速箱 )
+TabWidget = QtWidgets. 求帮忙 ( )
+ui =Ui_TabWidget（标签小工具） ( )
+用户界面 设置Ui ( 选项卡小部件 )
+ 选项卡控件显示 ( )
+系统出口 (应用程序执行官_ ( ) )
