@@ -1,6 +1,7 @@
 import sys
 import re
 import os
+import shutil
 import subprocess
 import chardet
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -62,6 +63,10 @@ class Ui_TabWidget(object):
         self.write.setGeometry(QtCore.QRect(550, 330, 121, 41))
         self.write.setObjectName("write")
 
+        self.move = QtWidgets.QPushButton(self.tab)
+        self.move.setGeometry(QtCore.QRect(550,330,121,41))
+        self.move.setObjectName("move")
+        
         self.quit = QtWidgets.QPushButton(self.tab)
         self.quit.setGeometry(QtCore.QRect(600, 510, 75, 23))
         self.quit.setObjectName("quit")
@@ -76,6 +81,7 @@ class Ui_TabWidget(object):
         self.open.clicked.connect(dispose.open)
         self.only_read.clicked.connect(dispose.open)
         self.write.clicked.connect(dispose.write)
+        self.move.clicked.connect(dispose.move)
         self.quit.clicked.connect(dispose.quit)
         self.listWidget.itemDoubleClicked.connect(dispose.open)
 
@@ -99,6 +105,7 @@ class Ui_TabWidget(object):
         self.open.setText(_translate("TabWidget", "打开文件"))
         self.only_read.setText(_translate("TabWidget", "只读文件"))
         self.write.setText(_translate("TabWidget", "写入文件"))
+        self.move.setText(_translate("TabWidget","移动文件"))
         self.quit.setText(_translate("TabWidget", "退出"))
         self.textbox.setText(_translate("TabWidget",""))
 
@@ -194,8 +201,51 @@ class dispose(QtWidgets.QTabWidget):
         data = ui.textbox.toPlainText()
         f.write(data)
 
-    def quit(self):     #退出软件
-        sys.exit(app.exec_())
+    def move(self):  # 移动文件
+        try:
+            if ui.listWidget.currentItem() is None:
+                # 如果用户没有选择任何文件，弹出提示
+                QMessageBox.information(None, "提示", "请先选择要移动的文件。")
+                return
+            
+            file_name = ui.listWidget.currentItem().text()
+            source = str(dir) + '/' + str(file_name)
+
+            # 弹出文件对话框让用户选择目标文件夹
+            destination = QFileDialog.getExistingDirectory(None, '选择目标文件夹', 'C:/')
+
+            if destination:  # 如果用户选择了目标文件夹
+                destination_path = os.path.join(destination, file_name)
+
+                if os.path.exists(destination_path):
+                    # 如果目标文件已经存在，询问用户是否覆盖
+                    reply = QMessageBox.question(None, '文件已存在', '目标文件夹已经存在同名文件，是否覆盖？',
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        # 覆盖已存在的文件
+                        shutil.move(source, destination_path)
+                    else:
+                        # 用户选择不覆盖，不执行移动操作
+                        return
+                else:
+                    # 目标文件夹不存在同名文件，正常移动
+                    shutil.move(source, destination_path)
+
+                # 更新界面，从文件列表中移除已移动的文件
+                ui.listWidget.takeItem(ui.listWidget.currentRow())
+        except FileNotFoundError:
+            QMessageBox.critical(None, "错误", "找不到文件或目录。")
+        except PermissionError:
+            QMessageBox.critical(None, "错误", "没有权限执行操作。")
+        except Exception as e:
+            # 如果发生其他异常，弹出错误对话框显示错误信息
+            QMessageBox.critical(None, "Error", f"移动文件时发生错误：{str(e)}")
+
+    def quit(self):     # 退出软件
+        # 退出时会有弹框提示用户是否确认退出
+        reply = QMessageBox.question(None, '确认退出', '确定要退出吗？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            sys.exit(app.exec_())
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
